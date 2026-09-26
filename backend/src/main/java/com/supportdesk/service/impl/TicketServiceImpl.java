@@ -23,6 +23,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.supportdesk.enums.TicketActivityType;
+import com.supportdesk.service.TicketActivityService;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -31,6 +35,7 @@ public class TicketServiceImpl implements TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final TicketActivityService activityService;
 
     @Override
     @Transactional
@@ -48,6 +53,14 @@ public class TicketServiceImpl implements TicketService {
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        activityService.logActivity(
+                savedTicket,
+                customer,
+                TicketActivityType.TICKET_CREATED,
+                "Ticket created by " + customer.getFullName()
+        );
+
         return mapToDetailResponse(savedTicket);
     }
 
@@ -60,6 +73,8 @@ public class TicketServiceImpl implements TicketService {
             TicketCategory category,
             Long assignedAgentId,
             Boolean unassigned,
+            LocalDate startDate,
+            LocalDate endDate,
             Pageable pageable,
             UserPrincipal currentUser
     ) {
@@ -75,7 +90,9 @@ public class TicketServiceImpl implements TicketService {
                 priority,
                 category,
                 assignedAgentId,
-                unassigned
+                unassigned,
+                startDate,
+                endDate
         );
 
         return ticketRepository.findAll(spec, pageable).map(this::mapToListResponse);
@@ -115,6 +132,7 @@ public class TicketServiceImpl implements TicketService {
             }
         }
 
+        TicketStatus oldStatus = ticket.getStatus();
         ticket.setStatus(request.getStatus());
         if (request.getStatus() == TicketStatus.RESOLVED) {
             ticket.setResolvedAt(LocalDateTime.now());
@@ -123,6 +141,16 @@ public class TicketServiceImpl implements TicketService {
         }
 
         Ticket updatedTicket = ticketRepository.save(ticket);
+
+        User performer = userRepository.findById(currentUser.getId()).orElse(null);
+        String actionDesc = "Status changed from " + oldStatus + " to " + request.getStatus();
+        if (request.getStatus() == TicketStatus.RESOLVED) {
+            actionDesc = "Ticket resolved";
+        } else if (request.getStatus() == TicketStatus.CLOSED) {
+            actionDesc = "Ticket closed";
+        }
+        activityService.logActivity(updatedTicket, performer, TicketActivityType.STATUS_CHANGED, actionDesc);
+
         return mapToDetailResponse(updatedTicket);
     }
 
@@ -136,8 +164,18 @@ public class TicketServiceImpl implements TicketService {
         Ticket ticket = ticketRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
 
+        TicketPriority oldPriority = ticket.getPriority();
         ticket.setPriority(request.getPriority());
         Ticket updatedTicket = ticketRepository.save(ticket);
+
+        User performer = userRepository.findById(currentUser.getId()).orElse(null);
+        activityService.logActivity(
+                updatedTicket,
+                performer,
+                TicketActivityType.PRIORITY_CHANGED,
+                "Priority changed from " + oldPriority + " to " + request.getPriority()
+        );
+
         return mapToDetailResponse(updatedTicket);
     }
 
@@ -168,6 +206,15 @@ public class TicketServiceImpl implements TicketService {
         }
 
         Ticket updatedTicket = ticketRepository.save(ticket);
+
+        User performer = userRepository.findById(currentUser.getId()).orElse(null);
+        activityService.logActivity(
+                updatedTicket,
+                performer,
+                TicketActivityType.TICKET_ASSIGNED,
+                "Ticket assigned to " + agent.getFullName()
+        );
+
         return mapToDetailResponse(updatedTicket);
     }
 

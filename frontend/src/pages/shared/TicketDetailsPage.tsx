@@ -9,13 +9,18 @@ import {
   TicketMessage,
   TicketPriority,
   TicketStatus,
+  TicketActivity,
+  AttachmentResponse,
 } from '../../types/ticket.types';
 import { User } from '../../types/auth.types';
+import { attachmentApi } from '../../api/attachmentApi';
 import { TicketStatusBadge } from '../../components/tickets/TicketStatusBadge';
 import { TicketPriorityBadge } from '../../components/tickets/TicketPriorityBadge';
 import { TicketCategoryBadge } from '../../components/tickets/TicketCategoryBadge';
 import { ConversationThread } from '../../components/tickets/ConversationThread';
 import { ReplyBox } from '../../components/tickets/ReplyBox';
+import { TicketActivityTimeline } from '../../components/tickets/TicketActivityTimeline';
+import { TicketAttachmentSection } from '../../components/tickets/TicketAttachmentSection';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
@@ -30,6 +35,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  History,
 } from 'lucide-react';
 
 export const TicketDetailsPage: React.FC = () => {
@@ -40,6 +46,8 @@ export const TicketDetailsPage: React.FC = () => {
 
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [activities, setActivities] = useState<TicketActivity[]>([]);
+  const [attachment, setAttachment] = useState<AttachmentResponse | null>(null);
   const [agents, setAgents] = useState<User[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   const [agentsError, setAgentsError] = useState('');
@@ -57,12 +65,16 @@ export const TicketDetailsPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      const [ticketData, messagesData] = await Promise.all([
+      const [ticketData, messagesData, activitiesData, attachmentData] = await Promise.all([
         ticketApi.getTicketById(ticketId),
         messageApi.getMessages(ticketId),
+        ticketApi.getActivities(ticketId).catch(() => []),
+        attachmentApi.getLatestAttachment(ticketId).catch(() => null),
       ]);
       setTicket(ticketData);
       setMessages(messagesData);
+      setActivities(activitiesData || []);
+      setAttachment(attachmentData || null);
 
       if (isAgent) {
         try {
@@ -95,12 +107,35 @@ export const TicketDetailsPage: React.FC = () => {
     fetchTicketAndMessages();
   }, [ticketId]);
 
+  const refreshActivities = async () => {
+    try {
+      const updatedActivities = await ticketApi.getActivities(ticketId);
+      setActivities(updatedActivities || []);
+    } catch (e) {
+      console.error('Failed to refresh activities', e);
+    }
+  };
+
+  const handleAttachmentUpdated = async () => {
+    try {
+      const [latestAttachment, updatedActivities] = await Promise.all([
+        attachmentApi.getLatestAttachment(ticketId),
+        ticketApi.getActivities(ticketId),
+      ]);
+      setAttachment(latestAttachment || null);
+      setActivities(updatedActivities || []);
+    } catch (e) {
+      console.error('Failed to update attachment state', e);
+    }
+  };
+
   const handleStatusChange = async (newStatus: TicketStatus) => {
     if (!ticket) return;
     try {
       setActionLoading(true);
       const updated = await ticketApi.updateStatus(ticket.id, newStatus);
       setTicket(updated);
+      refreshActivities();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update status');
     } finally {
@@ -114,6 +149,7 @@ export const TicketDetailsPage: React.FC = () => {
       setActionLoading(true);
       const updated = await ticketApi.updatePriority(ticket.id, newPriority);
       setTicket(updated);
+      refreshActivities();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update priority');
     } finally {
@@ -127,6 +163,7 @@ export const TicketDetailsPage: React.FC = () => {
       setActionLoading(true);
       const updated = await ticketApi.assignTicket(ticket.id, agentId);
       setTicket(updated);
+      refreshActivities();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to assign ticket');
     } finally {
@@ -138,6 +175,7 @@ export const TicketDetailsPage: React.FC = () => {
     if (!ticket) return;
     const newMsg = await messageApi.sendMessage(ticket.id, msgText, isInternalNote);
     setMessages((prev) => [...prev, newMsg]);
+    refreshActivities();
 
     // If customer replied to resolved ticket, reload ticket to get updated IN_PROGRESS status
     if (isCustomer && ticket.status === 'RESOLVED') {
@@ -359,6 +397,14 @@ export const TicketDetailsPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Ticket Attachment Section */}
+          <TicketAttachmentSection
+            ticketId={ticket.id}
+            attachment={attachment}
+            isCustomer={isCustomer}
+            onAttachmentUpdated={handleAttachmentUpdated}
+          />
+
           {/* Ticket Lifecycle & Status Card */}
           <Card>
             <CardHeader className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -429,6 +475,24 @@ export const TicketDetailsPage: React.FC = () => {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Ticket Activity History / Audit Log Card */}
+          <Card>
+            <CardHeader className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <History className="h-4 w-4 text-blue-600" />
+                  Activity Log
+                </CardTitle>
+                <span className="text-xs text-slate-400 font-normal">
+                  {activities.length} events
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-5">
+              <TicketActivityTimeline activities={activities} />
             </CardContent>
           </Card>
         </div>

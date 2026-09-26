@@ -8,6 +8,8 @@ import com.supportdesk.security.UserPrincipal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+
 public interface TicketService {
 
     TicketDetailResponse createTicket(CreateTicketRequest request, UserPrincipal currentUser);
@@ -19,6 +21,8 @@ public interface TicketService {
             TicketCategory category,
             Long assignedAgentId,
             Boolean unassigned,
+            LocalDate startDate,
+            LocalDate endDate,
             Pageable pageable,
             UserPrincipal currentUser
     );

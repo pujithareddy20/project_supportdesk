@@ -23,6 +23,8 @@ export const MyTicketsPage: React.FC = () => {
   const status = (searchParams.get('status') as TicketStatus) || '';
   const priority = (searchParams.get('priority') as TicketPriority) || '';
   const category = (searchParams.get('category') as TicketCategory) || '';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
   const page = parseInt(searchParams.get('page') || '0', 10);
 
   const fetchTickets = async () => {
@@ -33,6 +35,8 @@ export const MyTicketsPage: React.FC = () => {
         status: status || undefined,
         priority: priority || undefined,
         category: category || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         page,
         size: 10,
         sortBy: 'createdAt',
@@ -50,7 +54,7 @@ export const MyTicketsPage: React.FC = () => {
 
   useEffect(() => {
     fetchTickets();
-  }, [search, status, priority, category, page]);
+  }, [search, status, priority, category, startDate, endDate, page]);
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -72,6 +76,8 @@ export const MyTicketsPage: React.FC = () => {
   const handleReset = () => {
     setSearchParams(new URLSearchParams());
   };
+
+  const hasActiveFilters = !!search || !!status || !!priority || !!category || !!startDate || !!endDate;
 
   return (
     <div className="space-y-6">
@@ -100,6 +106,10 @@ export const MyTicketsPage: React.FC = () => {
         onPriorityChange={(val) => updateParam('priority', val)}
         category={category}
         onCategoryChange={(val) => updateParam('category', val)}
+        startDate={startDate}
+        onStartDateChange={(val) => updateParam('startDate', val)}
+        endDate={endDate}
+        onEndDateChange={(val) => updateParam('endDate', val)}
         onReset={handleReset}
       />
 
@@ -109,13 +119,13 @@ export const MyTicketsPage: React.FC = () => {
         <EmptyState
           title="No tickets found"
           description={
-            search || status || priority || category
+            hasActiveFilters
               ? "No tickets match your active filter criteria. Try adjusting or clearing your filters."
               : "You haven't submitted any support tickets yet."
           }
-          actionLabel={search || status || priority || category ? "Clear Filters" : "Create Support Ticket"}
+          actionLabel={hasActiveFilters ? "Clear Filters" : "Create Support Ticket"}
           onAction={
-            search || status || priority || category
+            hasActiveFilters
               ? handleReset
               : () => navigate('/tickets/new')
           }

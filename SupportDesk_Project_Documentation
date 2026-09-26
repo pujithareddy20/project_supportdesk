@@ -1,0 +1,420 @@
+# SupportDesk – Customer Support Ticketing System
+## Comprehensive Technical & Functional Project Documentation
+
+---
+
+## 1. Project Overview
+
+**SupportDesk** is a modern, full-stack, enterprise-grade Customer Support Ticketing System designed to streamline technical support workflows, customer communication, issue tracking, and ticket lifecycle management. 
+
+- **Project Name**: SupportDesk
+- **Project Purpose**: Provide an isolated, secure, and intuitive web application for customers to lodge support tickets and track resolutions, while enabling support agents to claim, prioritize, manage, reply, and resolve issues effectively.
+- **Application Capabilities**: Multi-role authentication (Customer & Support Agent), dynamic dashboard analytics, ticket creation with optional file attachments, automated Gemini AI classification recommendations, rich conversation threads with internal notes, full audit trail timeline logging, and multi-parameter searching/filtering.
+- **Target Users**:
+  1. **Customer**: End users seeking technical assistance, billing inquiries, account updates, or general support.
+  2. **Support Agent**: Internal service specialists responsible for diagnosing issues, assigning tickets, communicating with customers, recording internal notes, and resolving support requests.
+- **Main Objective**: Replace manual support channels (email, phone calls) with a centralized, transparent, and structured ticketing system that improves response times, enforces role authorization, and maintains a complete audit history.
+
+> [!NOTE]
+> **Role Scope Note**: The application strictly supports **Customer** and **Support Agent** user roles. There is no separate Admin Dashboard in the application scope.
+
+---
+
+## 2. Problem Statement
+
+Modern organizations face significant challenges when managing customer inquiries through unorganized communication channels such as raw email inboxes or instant messaging apps:
+
+1. **Lack of Centralized Tracking**: Customer requests get lost or mislaid without unique tracking IDs or dedicated status indicators.
+2. **Delayed Response Times**: Support agents struggle to identify unassigned tickets or categorize urgent issues systematically.
+3. **Impaired Collaboration**: Service agents lack a secure mechanism to exchange private internal notes without exposing technical commentary to customers.
+4. **Security & Data Scoping Vulnerabilities**: Unprotected systems risk exposing private customer data, ticket conversations, or attached files to unauthorized third parties.
+5. **No Audit Trail**: Organizations lack historical records of status transitions, agent assignments, or file replacements over a ticket's lifetime.
+
+**SupportDesk** directly solves these issues by providing a centralized database, JWT-secured REST APIs, role-scoped user interfaces, real-time audit logs, and secure file attachment workflows.
+
+---
+
+## 3. Approach Followed
+
+The development of SupportDesk followed an agile, modular, layer-decoupled architecture emphasizing strict data isolation, zero-trust authorization checks, and additive feature enhancement.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        React 18 Single Page App                        │
+│                   (Tailwind CSS, Lucide Icons, Vite)                   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTP / REST API (JSON & Multipart)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Spring Boot REST Controller                     │
+│                  (Spring Security & JWT Authentication)                │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Method Call
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                           Service Layer                                │
+│          (Business Logic, Activity Logging, Authorization Scoping)      │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ JPA Methods / Criteria Builder
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Repository Layer & JPA                          │
+│                      (Spring Data JPA & Hibernate)                     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ SQL Queries
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                          MySQL Relational Database                     │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Flow Breakdown:
+1. **Requirement Analysis**: Identified core requirements for Customer ticketing, Agent management, BOLA (Broken Object-Level Authorization) security, attachment replacement, and activity history.
+2. **Frontend Architecture**: Built with React 18, TypeScript, and Vite. Implemented custom context (`AuthContext`), route protection wrappers (`ProtectedRoute`), responsive Tailwind layouts, and dynamic API client abstraction (`axiosClient`).
+3. **Backend REST APIs**: Built with Spring Boot 3.3.4 (Java 21). Exposes stateless JSON endpoints secured by Spring Security filter chains and custom JWT tokens.
+4. **Database & Persistence**: MySQL database integrated via Spring Data JPA and Hibernate. Entity models enforce constraints, indexes, cascade rules, and relational mappings.
+5. **Security & Authorization**: Passwords hashed using BCrypt. Direct object access checks enforce strict owner scoping for customers and role-based permissions for agents.
+
+---
+
+## 4. Technologies / Libraries Used
+
+The following table lists the exact technologies and libraries declared in the application's configuration manifests (`package.json` and `pom.xml`):
+
+| Category | Technology / Library | Version | Purpose |
+|---|---|---|---|
+| **Frontend Core** | React | `^19.2.8` | Component-based UI view framework |
+| **Frontend Core** | React DOM | `^19.2.8` | DOM rendering library for React |
+| **Frontend Build** | Vite | `^8.3.0` | Fast frontend build tool and dev server |
+| **Frontend Typing** | TypeScript | `~6.0.2` | Static type safety and contract enforcement |
+| **Frontend Router**| React Router DOM | `^7.18.4` | Client-side routing and protected view navigation |
+| **HTTP Client** | Axios | `^1.20.0` | HTTP request client with Bearer token interceptors |
+| **Frontend Styling**| Tailwind CSS | `^3.4.19` | Utility-first responsive CSS framework |
+| **UI Components** | Lucide React | `^1.47.0` | Icon set for visual indicators and navigation |
+| **UI Utilities** | clsx / tailwind-merge | `^2.1.1` / `^3.7.0` | Dynamic class string merging |
+| **Backend Core** | Java | `21` | High-performance backend runtime environment |
+| **Backend Framework**| Spring Boot Starter Web | `3.3.4` | RESTful API controllers and embedded Tomcat server |
+| **ORM / Data Access**| Spring Data JPA / Hibernate | `3.3.4` | Entity mapping, JPA specifications, and database queries |
+| **Backend Security**| Spring Security | `3.3.4` | Authentication, method-level security, and filter chain |
+| **Security Token** | JJWT (io.jsonwebtoken) | `0.12.6` | JSON Web Token (JWT) parsing and verification |
+| **Password Hashing**| BCrypt (Spring Security) | `3.3.4` | Secure salted password hashing |
+| **Validation** | Spring Boot Starter Validation | `3.3.4` | Jakarta Bean Validation annotations (`@NotBlank`, `@Email`, `@Size`) |
+| **Code Generation**| Lombok | Optional | Boilerplate reduction (`@Getter`, `@Setter`, `@Builder`, `@NoArgsConstructor`) |
+| **Database Driver** | MySQL Connector/J | Runtime | MySQL JDBC driver connection wrapper |
+| **Build Tool** | Apache Maven | `3.x` | Backend dependency management and build lifecycle |
+
+---
+
+## 5. Project Architecture
+
+SupportDesk strictly decouples client presentation, REST controller endpoints, domain services, repository data access, and database storage:
+
+1. **Client Presentation (Frontend)**: Interacts with the backend exclusively via asynchronous HTTP requests. Authentication state is stored in `localStorage` as a JWT Bearer token.
+2. **Security & Controller Layer (Backend)**: Inspects incoming Authorization headers (`Bearer <token>`). `JwtAuthenticationFilter` validates token claims and populates the `SecurityContext`. Controllers delegate request processing to service interfaces.
+3. **Service Layer**: Implements core business logic:
+   - Scopes data queries based on user identity (`customerId` vs. global Agent view).
+   - Generates unique ticket numbers (`TCK-XXXX`).
+   - Executes validation and authorization checks (BOLA checks).
+   - Triggers audit log events (`TicketActivityService`) on creation, status change, priority update, assignment, comment, and attachment events.
+4. **Repository & JPA Layer**: Uses Spring Data JPA Repositories and `TicketSpecification` (Criteria Builder) to perform parameter-driven SQL queries.
+5. **Database Storage Layer**: MySQL database storing relational tables for users, tickets, messages, activities, and attachments.
+
+---
+
+## 6. Main Features
+
+### Customer Features
+- **Registration**: Register account with Full Name, Email, Password, and Contact Number (`/register/customer`).
+- **Authentication**: Secure Login (`/login`) with JWT token generation and session restoration on page reload.
+- **Customer Dashboard**: Displays personal ticket metrics (Total, Open, In Progress, Resolved, Closed, Urgent).
+- **Create Ticket**: Form supporting Title (min 5 chars), Description (min 10 chars), Category selection, Priority selection, optional File Attachment, and optional AI classification recommendations.
+- **My Support Tickets**: Tabular list of customer-submitted tickets with status badges, priority badges, category badges, and assigned agent details.
+- **Ticket Search & Advanced Filtering**: Search by Ticket Number, Title, or ID; filter by Status, Priority, Category, and Date Range (`From:` / `To:`).
+- **Ticket Details View**: Displays issue details, timeline, ownership, conversation thread, attachment card, and audit history.
+- **Conversation Thread**: Post replies to support agents. Replying to a `RESOLVED` or `CLOSED` ticket automatically reopens the ticket to `IN_PROGRESS`.
+- **Ticket Closure**: Customers can confirm resolution and close resolved tickets.
+- **File Attachments**: Upload file during ticket creation or upload/replace file later on existing tickets.
+- **Attachment Replacement**: Uploading File B replaces File A as the current latest attachment while preserving File A metadata for audit history.
+- **Activity History Log**: Chronological timeline displaying ticket creation, assignment, status changes, priority changes, comments, and attachment replacement events.
+- **Logout**: Clears local storage tokens and invalidates user session.
+
+### Support Agent Features
+- **Authorized Registration**: Agent registration (`/register/agent`) requiring an authorized Agent ID (values `123` to `127`).
+- **Support Agent Dashboard**: Global analytics panel tracking organization-wide ticket counts, open tickets, in-progress tickets, resolved tickets, and urgent issues.
+- **Support Ticket Management Board**: Comprehensive board (`/agent/tickets`) listing all tickets across the organization.
+- **Unassigned Filter**: Quick filter toggle to highlight unassigned customer tickets requiring ownership.
+- **Advanced Multi-Filtering**: Search by Title/ID/Number, filter by Status, Priority, Category, Assigned Agent, and Date Range (`From:` / `To:`).
+- **Ticket Ownership & Assignment**: Self-assign ticket ("Take Ownership") or reassign ticket to any registered support agent from a dropdown list. Auto-transitions `OPEN` tickets to `IN_PROGRESS` upon assignment.
+- **Status Management**: Update ticket lifecycle status (`OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`). Setting status to `RESOLVED` automatically sets `resolved_at` timestamp.
+- **Priority Management**: Modify urgency/priority level (`LOW`, `MEDIUM`, `HIGH`, `URGENT`).
+- **Customer Communication**: Post public replies visible to the customer.
+- **Internal Notes**: Create private internal notes (marked with a lock icon) visible exclusively to support agents. Internal notes are completely isolated from customers at the SQL query layer.
+- **Attachment Viewing & Download**: Inspect customer attachments, view file metadata (size, upload date, uploader), and download latest attached files.
+- **Activity Log Inspection**: View real-time audit history of all actions performed on a ticket.
+
+---
+
+## 7. Steps to Run the Project
+
+### Prerequisites
+Ensure the following tools are installed on your machine:
+- **Java Development Kit (JDK)**: Java 17 or Java 21
+- **Node.js**: v18.x or higher
+- **npm**: v9.x or higher
+- **MySQL Server**: v8.0.x or higher
+- **Maven**: Included via Maven Wrapper (`mvnw` / `mvnw.cmd`) or standalone Maven 3.8+
+
+---
+
+### Database Setup
+1. Start your local MySQL server on port `3306`.
+2. Create the database `supportdesk_db` (or allow Spring Boot to auto-create it via the connection string):
+   ```sql
+   CREATE DATABASE IF NOT EXISTS supportdesk_db;
+   ```
+3. Update connection properties in `backend/src/main/resources/application.yml` if your MySQL username/password differs from defaults:
+   ```yaml
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/supportdesk_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+       username: root
+       password: <YOUR_DATABASE_PASSWORD>
+   ```
+
+---
+
+### Backend Setup
+1. Open a terminal and navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
+2. Build and compile the Spring Boot application using Maven:
+   ```bash
+   # On Windows (cmd/powershell):
+   .\mvnw.cmd clean compile
+
+   # On Linux/macOS:
+   ./mvnw clean compile
+   ```
+3. Run the Spring Boot application:
+   ```bash
+   # On Windows:
+   .\mvnw.cmd spring-boot:run
+
+   # On Linux/macOS:
+   ./mvnw spring-boot:run
+   ```
+4. The backend server will start on port `8080`.
+
+---
+
+### Frontend Setup
+1. Open a second terminal and navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+   ```
+2. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+4. The frontend application will start on port `5173`.
+
+---
+
+### Application URLs & Pre-seeded Accounts
+- **Frontend URL**: `http://localhost:5173`
+- **Backend API Base URL**: `http://localhost:8080/api`
+
+#### Pre-seeded Demo Accounts (Created automatically on startup via `DataInitializer`):
+- **Customer Account**:
+  - Email: `customer@supportdesk.com`
+  - Password: `Customer@123`
+- **System Admin Account**:
+  - Email: `admin@supportdesk.com`
+  - Password: `Admin@123`
+
+---
+
+## 8. Key Assumptions
+
+1. **Self-Service Customer Onboarding**: Customers can freely register their own accounts via the registration page.
+2. **Authorized Support Agent Registration**: Support agents require a pre-authorized numerical Agent ID (between `123` and `127`) to register an agent account.
+3. **Strict BOLA Isolation**: Customers are strictly forbidden from viewing or modifying tickets, messages, attachments, or activity logs belonging to other customers.
+4. **Internal Note Security**: Internal notes posted by agents are strictly private and must never be exposed to customers under any circumstances.
+5. **Optional Attachments**: File attachments are completely optional. Tickets can be created, updated, and resolved without files.
+6. **Latest Attachment Replacement**: Uploading a new attachment replaces the previous file as the "Current Attachment", while keeping historical records intact.
+7. **Stateless JWT Security**: The backend authentication mechanism is stateless; JWT tokens expire after 24 hours.
+
+---
+
+## 9. Results / Output
+
+### Customer Workflow Accomplishments
+- Customers register, log in, and view personal metrics on their dashboard.
+- Customers submit support tickets with titles, descriptions, categories, priorities, optional AI suggestions, and optional file attachments.
+- Customers track ticket progress, view assigned support agent details, post replies, and download current attachments.
+- Customers re-upload/replace attachments when requested by support specialists.
+- Customers close resolved tickets and view chronological activity logs.
+
+### Support Agent Workflow Accomplishments
+- Support agents register using authorized Agent IDs (123–127) and log in.
+- Agents monitor global ticket statistics and filter unassigned tickets.
+- Agents claim ticket ownership ("Take Ownership") or assign tickets to team members.
+- Agents update ticket priorities (`LOW` to `URGENT`) and lifecycle statuses (`OPEN` to `CLOSED`).
+- Agents reply publicly to customers or record private internal notes.
+- Agents inspect customer attachments, download attached files, and review complete activity audit trails.
+
+---
+
+## 10. Challenges Faced
+
+1. **BOLA Security & Ownership Scoping**: Ensuring that customer list queries and detail getters are strictly scoped by `customer_id` across JPA Criteria Specifications and Service methods to prevent Broken Object-Level Authorization vulnerabilities.
+2. **Internal Notes Data Leak Prevention**: Separating customer conversation threads from agent internal notes at the SQL database query layer (`findByTicketIdAndIsInternalNoteFalseOrderByCreatedAtAsc`), ensuring zero risk of accidental note leakage.
+3. **File Attachment Replacement Logic**: Unsetting the `is_latest` flag on existing attachments when a customer re-uploads a new file, ensuring agents see only the current file while preserving audit trail metadata.
+4. **Activity History Synchronization**: Ensuring that status changes, agent assignments, priority updates, replies, and file replacements automatically emit clean audit records without duplicate event generation.
+5. **AI Classification Integration**: Integrating Google Gemini API suggestions gracefully with fallback handling if the AI service key is unconfigured.
+
+---
+
+## 11. Possible Future Improvements
+
+> [!IMPORTANT]
+> The following list represents **potential future enhancements** and is distinct from currently implemented features:
+
+1. **Real-Time WebSockets / Server-Sent Events (SSE)**: Push real-time notification alerts to agents when new tickets or replies arrive.
+2. **Email Notification System**: Send automated email notifications on ticket updates, agent assignments, and customer replies via SMTP.
+3. **SLA (Service Level Agreement) Escalation Timers**: Automatically escalate urgent tickets if unassigned after a specific time threshold.
+4. **Rich Text / Markdown Editor**: Support formatted text, code blocks, and embedded images in message replies.
+5. **Cloud File Storage Integration**: Store attachments on AWS S3 or Google Cloud Storage instead of local disk storage.
+6. **Containerization & Cloud Deployment**: Package frontend and backend with Docker & Docker Compose for cloud deployment.
+
+---
+
+## 12. Database Overview
+
+SupportDesk uses a relational database schema managed by Spring Data JPA and Hibernate (`ddl-auto: update`).
+
+```mermaid
+erDiagram
+    USERS ||--o{ TICKETS : "customer / assigned_agent"
+    USERS ||--o{ TICKET_MESSAGES : "sender"
+    USERS ||--o{ TICKET_ACTIVITIES : "user"
+    USERS ||--o{ TICKET_ATTACHMENTS : "uploaded_by"
+    TICKETS ||--o{ TICKET_MESSAGES : "contains"
+    TICKETS ||--o{ TICKET_ACTIVITIES : "has"
+    TICKETS ||--o{ TICKET_ATTACHMENTS : "has"
+
+    USERS {
+        bigint id PK
+        varchar full_name
+        varchar email UK
+        varchar password
+        varchar contact_number
+        integer agent_id UK
+        varchar role
+    }
+
+    TICKETS {
+        bigint id PK
+        varchar ticket_number UK
+        varchar title
+        text description
+        varchar status
+        varchar priority
+        varchar category
+        bigint customer_id FK
+        bigint assigned_agent_id FK
+        datetime resolved_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    TICKET_MESSAGES {
+        bigint id PK
+        bigint ticket_id FK
+        bigint sender_id FK
+        text message
+        boolean is_internal_note
+        datetime created_at
+    }
+
+    TICKET_ACTIVITIES {
+        bigint id PK
+        bigint ticket_id FK
+        bigint user_id FK
+        varchar performer_name
+        varchar activity_type
+        text description
+        datetime created_at
+    }
+
+    TICKET_ATTACHMENTS {
+        bigint id PK
+        bigint ticket_id FK
+        bigint uploaded_by_id FK
+        varchar original_file_name
+        varchar storage_file_name UK
+        varchar file_path
+        varchar content_type
+        bigint file_size
+        boolean is_latest
+        datetime created_at
+    }
+```
+
+### Table Descriptions:
+1. **`users`**: Stores user authentication details, full name, email, contact number, authorized agent ID, and security role (`ROLE_CUSTOMER`, `ROLE_SUPPORT_AGENT`, `ROLE_ADMIN`).
+2. **`tickets`**: Core ticket record containing unique ticket number (`TCK-XXXX`), title, description, category, priority, status, customer foreign key, and assigned agent foreign key.
+3. **`ticket_messages`**: Stores conversation thread replies and agent internal notes linked to a ticket and sender user.
+4. **`ticket_activities`**: Persistent audit log recording events (`TICKET_CREATED`, `STATUS_CHANGED`, `PRIORITY_CHANGED`, `TICKET_ASSIGNED`, `COMMENT_ADDED`, `ATTACHMENT_UPLOADED`, `ATTACHMENT_REPLACED`).
+5. **`ticket_attachments`**: Stores file attachment metadata, file paths, content types, byte sizes, uploader references, and `is_latest` boolean indicators.
+
+---
+
+## 13. API Overview
+
+| Method | Endpoint | Purpose | Access Control |
+|---|---|---|---|
+| **POST** | `/api/auth/register` | Default customer registration | Public |
+| **POST** | `/api/auth/register/customer` | Customer registration with contact details | Public |
+| **POST** | `/api/auth/register/agent` | Support Agent registration with Agent ID check | Public |
+| **POST** | `/api/auth/login` | Authenticate user & issue JWT token | Public |
+| **GET** | `/api/auth/me` | Fetch authenticated user summary | Authenticated |
+| **POST** | `/api/tickets` | Create a new support ticket | Authenticated |
+| **GET** | `/api/tickets` | List/filter tickets (search, status, priority, category, agent, date range) | Authenticated (Customer scoped / Agent global) |
+| **GET** | `/api/tickets/{id}` | Fetch detailed ticket information | Authenticated (BOLA checked) |
+| **GET** | `/api/tickets/{id}/activities` | Fetch activity history audit trail | Authenticated (BOLA checked) |
+| **PATCH** | `/api/tickets/{id}/status` | Update ticket status | Authenticated (Customer close / Agent full) |
+| **PATCH** | `/api/tickets/{id}/priority` | Update ticket priority level | Support Agent / Admin |
+| **PATCH** | `/api/tickets/{id}/assign` | Assign ticket to support agent | Support Agent / Admin |
+| **GET** | `/api/tickets/{ticketId}/messages` | Fetch ticket messages (excludes internal notes for customer) | Authenticated (BOLA checked) |
+| **POST** | `/api/tickets/{ticketId}/messages` | Post reply or internal note | Authenticated (BOLA checked) |
+| **POST** | `/api/tickets/{ticketId}/attachments` | Upload or replace file attachment | Authenticated (BOLA checked) |
+| **GET** | `/api/tickets/{ticketId}/attachments/latest` | Fetch latest attachment metadata | Authenticated (BOLA checked) |
+| **GET** | `/api/tickets/{ticketId}/attachments/{id}/download` | Download attachment file resource | Authenticated (BOLA checked) |
+| **GET** | `/api/dashboard/stats` | Fetch summary analytics metrics | Authenticated (Role scoped) |
+| **GET** | `/api/users/agents` | Fetch active support agents list | Support Agent / Admin |
+| **POST** | `/api/ai/suggest-ticket-classification` | Suggest category & priority using Gemini AI | Authenticated |
+
+---
+
+## 14. Authentication and Security
+
+1. **Stateless JWT Authentication**: Tokens generated upon login contain subject (email), user ID, role, and full name. Authenticated requests supply the token in the HTTP `Authorization: Bearer <token>` header.
+2. **Password Hashing**: Passwords stored in MySQL are hashed using `BCryptPasswordEncoder`.
+3. **Role-Based Authorization**: `@PreAuthorize` method annotations and `SecurityConfig` authorize endpoints based on Spring Security roles.
+4. **Data Isolation & BOLA Enforcement**: Every service method checks whether a customer owns the requested ticket (`ticket.getCustomer().getId().equals(currentUser.getId())`). Unauthorized access throws `AccessDeniedException` (HTTP 403 Forbidden).
+5. **Internal Notes Isolation**: Repository methods explicitly filter out internal notes when queried by customer accounts.
+6. **Input Validation**: Request bodies validate required fields, sizes, email formats, and contact number regex using Jakarta Bean Validation. Validation failures return structured HTTP 400 error responses.
+
+---
+
+## 15. Conclusion
+
+**SupportDesk** is a robust, secure, and fully functional Customer Support Ticketing System that solves traditional customer communication challenges through structured workflows, role authorization, and complete transparency. 
+
+By combining a responsive **React 18 & Tailwind CSS** frontend with a powerful **Spring Boot & MySQL** backend, SupportDesk delivers seamless ticket creation, AI classification assistance, role-scoped management boards, secure internal notes, replacement file attachment workflows, and complete audit history tracking. The system adheres strictly to security best practices, ensuring customer data remains isolated while giving support specialists the tools needed to deliver exceptional technical support.

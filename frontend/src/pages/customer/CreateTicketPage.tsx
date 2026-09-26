@@ -13,6 +13,7 @@ import { Select } from '../../components/ui/Select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
 import { TicketCategoryBadge } from '../../components/tickets/TicketCategoryBadge';
 import { TicketPriorityBadge } from '../../components/tickets/TicketPriorityBadge';
+import { attachmentApi } from '../../api/attachmentApi';
 import {
   ArrowLeft,
   Send,
@@ -22,6 +23,7 @@ import {
   X,
   AlertCircle,
   Loader2,
+  Paperclip,
 } from 'lucide-react';
 
 export const CreateTicketPage: React.FC = () => {
@@ -80,6 +82,8 @@ export const CreateTicketPage: React.FC = () => {
     setAppliedSuccess(false);
   };
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
@@ -106,6 +110,15 @@ export const CreateTicketPage: React.FC = () => {
         category,
         priority,
       });
+
+      // Optional file attachment upload if customer selected a file
+      if (selectedFile) {
+        try {
+          await attachmentApi.uploadAttachment(created.id, selectedFile);
+        } catch (attachErr: any) {
+          console.error('Failed to upload attachment right after ticket creation', attachErr);
+        }
+      }
 
       navigate(`/tickets/${created.id}`);
     } catch (err: any) {
@@ -328,6 +341,23 @@ export const CreateTicketPage: React.FC = () => {
                   <option value="HIGH">High — Functionality blocked / urgent</option>
                   <option value="URGENT">Urgent — Complete service outage</option>
                 </Select>
+              </div>
+
+              {/* Optional File Attachment Input */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                <label className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Paperclip className="h-4 w-4 text-blue-600" />
+                  Attach File (Optional)
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Supported file formats: PDF, JPG, JPEG, PNG, WEBP, DOC, DOCX (Max size: 10MB).
+                </p>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-950 dark:file:text-blue-300 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-1"
+                />
               </div>
             </div>
 

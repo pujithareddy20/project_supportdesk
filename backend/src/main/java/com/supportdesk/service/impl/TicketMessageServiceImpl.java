@@ -19,6 +19,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.supportdesk.enums.TicketActivityType;
+import com.supportdesk.service.TicketActivityService;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,7 @@ public class TicketMessageServiceImpl implements TicketMessageService {
     private final TicketMessageRepository messageRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final TicketActivityService activityService;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,11 +82,19 @@ public class TicketMessageServiceImpl implements TicketMessageService {
 
         TicketMessage savedMessage = messageRepository.save(message);
 
+        // Log comment activity
+        String desc = internalNote
+                ? "Internal note added by " + sender.getFullName()
+                : "Comment added by " + sender.getFullName();
+
+        activityService.logActivity(ticket, sender, TicketActivityType.COMMENT_ADDED, desc);
+
         // If customer replies to a resolved ticket, automatically reopen to IN_PROGRESS
         if (isCustomer && (ticket.getStatus() == TicketStatus.RESOLVED || ticket.getStatus() == TicketStatus.CLOSED)) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
             ticket.setResolvedAt(null);
             ticketRepository.save(ticket);
+            activityService.logActivity(ticket, sender, TicketActivityType.STATUS_CHANGED, "Status automatically changed to IN_PROGRESS due to customer reply");
         }
 
         return mapToMessageResponse(savedMessage);

@@ -18,6 +18,8 @@ export interface TicketQueryParams {
   category?: TicketCategory;
   assignedAgentId?: number;
   unassigned?: boolean;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   size?: number;
   sortBy?: string;
@@ -68,6 +70,11 @@ export const ticketApi = {
       '/api/ai/suggest-ticket-classification',
       data
     );
+    return res.data.data;
+  },
+
+  getActivities: async (id: number): Promise<any[]> => {
+    const res = await axiosClient.get<ApiResponse<any[]>>(`/api/tickets/${id}/activities`);
     return res.data.data;
   },
 };

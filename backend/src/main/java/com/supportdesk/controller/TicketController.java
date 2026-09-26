@@ -17,7 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final TicketActivityService activityService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ROLE_CUSTOMER', 'AGENT', 'ROLE_AGENT', 'SUPPORT_AGENT', 'ROLE_SUPPORT_AGENT', 'ADMIN', 'ROLE_ADMIN')")
@@ -45,6 +48,8 @@ public class TicketController {
             @RequestParam(required = false) TicketCategory category,
             @RequestParam(required = false) Long assignedAgentId,
             @RequestParam(required = false) Boolean unassigned,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -55,7 +60,7 @@ public class TicketController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         Page<TicketListResponse> tickets = ticketService.getTickets(
-                search, status, priority, category, assignedAgentId, unassigned, pageable, currentUser
+                search, status, priority, category, assignedAgentId, unassigned, startDate, endDate, pageable, currentUser
         );
         return ResponseEntity.ok(ApiResponse.ok(tickets));
     }
@@ -67,6 +72,15 @@ public class TicketController {
     ) {
         TicketDetailResponse ticket = ticketService.getTicketById(id, currentUser);
         return ResponseEntity.ok(ApiResponse.ok(ticket));
+    }
+
+    @GetMapping("/{id}/activities")
+    public ResponseEntity<ApiResponse<List<TicketActivityResponse>>> getTicketActivities(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        List<TicketActivityResponse> activities = activityService.getActivitiesByTicketId(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.ok(activities));
     }
 
     @PatchMapping("/{id}/status")

@@ -9,10 +9,14 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 
+import { userApi } from '../../api/userApi';
+import { User } from '../../types/auth.types';
+
 export const AllTicketsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
+  const [agents, setAgents] = useState<User[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,8 +25,15 @@ export const AllTicketsPage: React.FC = () => {
   const status = (searchParams.get('status') as TicketStatus) || '';
   const priority = (searchParams.get('priority') as TicketPriority) || '';
   const category = (searchParams.get('category') as TicketCategory) || '';
+  const assignedAgentId = searchParams.get('assignedAgentId') || '';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
   const unassigned = searchParams.get('unassigned') === 'true';
   const page = parseInt(searchParams.get('page') || '0', 10);
+
+  useEffect(() => {
+    userApi.getSupportAgents().then((data) => setAgents(data || [])).catch(() => {});
+  }, []);
 
   const fetchTickets = async () => {
     try {
@@ -32,6 +43,9 @@ export const AllTicketsPage: React.FC = () => {
         status: status || undefined,
         priority: priority || undefined,
         category: category || undefined,
+        assignedAgentId: assignedAgentId ? parseInt(assignedAgentId, 10) : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         unassigned: unassigned ? true : undefined,
         page,
         size: 10,
@@ -50,7 +64,7 @@ export const AllTicketsPage: React.FC = () => {
 
   useEffect(() => {
     fetchTickets();
-  }, [search, status, priority, category, unassigned, page]);
+  }, [search, status, priority, category, assignedAgentId, startDate, endDate, unassigned, page]);
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -72,6 +86,16 @@ export const AllTicketsPage: React.FC = () => {
   const handleReset = () => {
     setSearchParams(new URLSearchParams());
   };
+
+  const hasActiveFilters =
+    !!search ||
+    !!status ||
+    !!priority ||
+    !!category ||
+    !!assignedAgentId ||
+    !!startDate ||
+    !!endDate ||
+    unassigned;
 
   return (
     <div className="space-y-6">
@@ -106,6 +130,13 @@ export const AllTicketsPage: React.FC = () => {
         onPriorityChange={(val) => updateParam('priority', val)}
         category={category}
         onCategoryChange={(val) => updateParam('category', val)}
+        startDate={startDate}
+        onStartDateChange={(val) => updateParam('startDate', val)}
+        endDate={endDate}
+        onEndDateChange={(val) => updateParam('endDate', val)}
+        assignedAgentId={assignedAgentId}
+        onAssignedAgentChange={(val) => updateParam('assignedAgentId', val)}
+        agents={agents}
         onReset={handleReset}
       />
 

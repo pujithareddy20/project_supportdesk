@@ -73,3 +73,36 @@ export interface DashboardStats {
   highPriorityTickets: number;
   urgentTickets?: number;
 }
+
+export type TicketActivityType =
+  | 'TICKET_CREATED'
+  | 'STATUS_CHANGED'
+  | 'PRIORITY_CHANGED'
+  | 'TICKET_ASSIGNED'
+  | 'COMMENT_ADDED'
+  | 'ATTACHMENT_UPLOADED'
+  | 'ATTACHMENT_REPLACED';
+
+export interface TicketActivity {
+  id: number;
+  ticketId: number;
+  userId: number | null;
+  performerName: String;
+  performerRole: string | null;
+  activityType: TicketActivityType;
+  description: string;
+  createdAt: string;
+}
+
+export interface AttachmentResponse {
+  id: number;
+  ticketId: number;
+  originalFileName: string;
+  contentType: string;
+  fileSize: number;
+  uploadedById: number;
+  uploadedByName: string;
+  isLatest: boolean;
+  createdAt: string;
+}
+

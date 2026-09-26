@@ -11,6 +11,9 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 public class TicketSpecification {
 
     public static Specification<Ticket> filterTickets(
@@ -20,7 +23,9 @@ public class TicketSpecification {
             TicketPriority priority,
             TicketCategory category,
             Long assignedAgentId,
-            Boolean unassigned
+            Boolean unassigned,
+            LocalDate startDate,
+            LocalDate endDate
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -30,12 +35,24 @@ public class TicketSpecification {
                 predicates.add(cb.equal(root.get("customer").get("id"), customerId));
             }
 
-            // 2. Search by Ticket Number or Title
+            // 2. Search by Ticket Number, Title, or ID
             if (StringUtils.hasText(search)) {
-                String searchPattern = "%" + search.trim().toLowerCase() + "%";
+                String searchTrimmed = search.trim();
+                String searchPattern = "%" + searchTrimmed.toLowerCase() + "%";
                 Predicate titleMatch = cb.like(cb.lower(root.get("title")), searchPattern);
                 Predicate numberMatch = cb.like(cb.lower(root.get("ticketNumber")), searchPattern);
-                predicates.add(cb.or(titleMatch, numberMatch));
+
+                if (searchTrimmed.matches("\\d+")) {
+                    try {
+                        Long idVal = Long.parseLong(searchTrimmed);
+                        Predicate idMatch = cb.equal(root.get("id"), idVal);
+                        predicates.add(cb.or(titleMatch, numberMatch, idMatch));
+                    } catch (NumberFormatException e) {
+                        predicates.add(cb.or(titleMatch, numberMatch));
+                    }
+                } else {
+                    predicates.add(cb.or(titleMatch, numberMatch));
+                }
             }
 
             // 3. Filter by Status
@@ -58,6 +75,14 @@ public class TicketSpecification {
                 predicates.add(cb.equal(root.get("assignedAgent").get("id"), assignedAgentId));
             } else if (Boolean.TRUE.equals(unassigned)) {
                 predicates.add(cb.isNull(root.get("assignedAgent")));
+            }
+
+            // 7. Filter by Date Range (startDate and endDate)
+            if (startDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), endDate.atTime(LocalTime.MAX)));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
